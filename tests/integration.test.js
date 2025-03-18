@@ -1,56 +1,73 @@
 const request = require("supertest");
-const { app,server } = require("../index"); // Įsitikink, kad eksportuoji Express app iš inddex.js failo
+const { app, server } = require("../index");
 
-describe("API Integration Tests", () => {
-    let testUser = {
-        username: "testuser",
-        password: "testpassword",
-        fullName: "Test User",
-        email: "testuser@example.com"
-    };
+describe("User API Integration Tests", () => {
+    let testUser = { username: "testuser", password: "password123", fullName: "Test User", email: "test@example.com" };
+
     afterAll(() => {
-        server.close(); // Uždaro serverį po visų testų
+        server.close();
     });
 
-    it("should register a new user", async () => {
+    test("Should register a new user", async () => {
         const res = await request(app).post("/register").send(testUser);
         expect(res.statusCode).toBe(201);
         expect(res.body).toHaveProperty("message", "User registered successfully");
     });
 
-    it("should not allow duplicate usernames", async () => {
+    test("Should not allow duplicate user registration", async () => {
         const res = await request(app).post("/register").send(testUser);
         expect(res.statusCode).toBe(400);
         expect(res.body).toHaveProperty("error", "Username already exists");
     });
 
-    it("should login with correct credentials", async () => {
-        const res = await request(app).post("/login").send({
-            username: testUser.username,
-            password: testUser.password
-        });
+    test("Should log in the registered user", async () => {
+        const res = await request(app).post("/login").send({ username: testUser.username, password: testUser.password });
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty("message", "Login successful");
     });
 
-    it("should not login with incorrect credentials", async () => {
-        const res = await request(app).post("/login").send({
-            username: "wronguser",
-            password: "wrongpassword"
-        });
+    test("Should fail to log in with incorrect credentials", async () => {
+        const res = await request(app).post("/login").send({ username: "wronguser", password: "wrongpass" });
         expect(res.statusCode).toBe(401);
         expect(res.body).toHaveProperty("error", "Invalid username or password");
     });
 
-    it("should get user details", async () => {
+    test("Should retrieve user details", async () => {
         const res = await request(app).get(`/user/${testUser.username}`);
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty("username", testUser.username);
     });
 
-    it("should delete user", async () => {
+    test("Should get all users without passwords", async () => {
+        const res = await request(app).get("/users");
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBeTruthy();
+        expect(res.body[0]).not.toHaveProperty("password");
+    });
+
+    test("Should log out the user", async () => {
+        const res = await request(app).post("/logout");
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("message", "Logged out successfully");
+    });
+
+    test("Should not register a user with missing fields", async () => {
+        const res = await request(app).post("/register").send({ username: "", password: "", fullName: "", email: "" });
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty("error", "All fields are required");
+    });
+
+
+    test("Should delete the user", async () => {
         const res = await request(app).delete(`/delete-user/${testUser.username}`);
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty("message", `User ${testUser.username} deleted successfully`);
     });
+
+    test("Should not find deleted user", async () => {
+        const res = await request(app).get(`/user/${testUser.username}`);
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toHaveProperty("error", "User not found");
+    });
 });
+
