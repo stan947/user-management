@@ -50,13 +50,34 @@ app.post("/login", (req, res) => {
     res.json({ message: "Login successful", user: { username: user.username, fullName: user.fullName, email: user.email } });
 });
  
-// Get User Details (Only if logged in)
-app.get("/user", (req, res) => {
-    if (!loggedInUser) {
-        return res.status(401).json({ error: "Unauthorized. Please log in." });
+// Get User Details by Username
+app.get("/user/:username", (req, res) => {
+    const { username } = req.params;
+ 
+    const user = users.find(user => user.username === username);
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
     }
  
-    res.json({ username: loggedInUser.username, fullName: loggedInUser.fullName, email: loggedInUser.email });
+    res.json({ username: user.username, fullName: user.fullName, email: user.email });
+});
+ 
+// Get All Users
+app.get("/users", (req, res) => {
+    res.json(users.map(({ password, ...user }) => user)); // Excluding password from response
+});
+ 
+// Delete User by Username
+app.delete("/delete-user/:username", (req, res) => {
+    const { username } = req.params;
+ 
+    const userIndex = users.findIndex(user => user.username === username);
+    if (userIndex === -1) {
+        return res.status(404).json({ error: "User not found" });
+    }
+ 
+    users.splice(userIndex, 1);
+    res.json({ message: `User ${username} deleted successfully` });
 });
  
 // Logout User
