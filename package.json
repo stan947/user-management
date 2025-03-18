@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "integration": "jest"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +16,9 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "newman-reporter-htmlextra": "^1.23.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }
