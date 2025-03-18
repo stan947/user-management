@@ -50,11 +50,11 @@ describe("User API Integration Tests", () => {
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty("message", "Logged out successfully");
     });
-
     test("Should not register a user with missing fields", async () => {
         const res = await request(app).post("/register").send({ username: "", password: "", fullName: "", email: "" });
         expect(res.statusCode).toBe(400);
-        expect(res.body).toHaveProperty("error", "All fields are required");
+        expect(res.body).toHaveProperty("error", "Invalid input");
+
     });
 
 
@@ -69,5 +69,24 @@ describe("User API Integration Tests", () => {
         expect(res.statusCode).toBe(404);
         expect(res.body).toHaveProperty("error", "User not found");
     });
-});
+    test("Should not expose password in user details response", async () => {
+        await request(app).post("/register").send(testUser); // Užtikriname, kad vartotojas yra
+    
+        const res = await request(app).get(`/user/${testUser.username}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body).not.toHaveProperty("password");
+    });
+    test("Should prevent SQL injection attempts", async () => {
+        const res = await request(app).post("/login").send({ username: "' OR 1=1 --", password: "anything" });
+        expect(res.statusCode).toBe(401);
+        expect(res.body).toHaveProperty("error", "Invalid username or password");
+    });
+    test("Should prevent XSS attacks in user input", async () => {
+        const res = await request(app).post("/register").send({ username: "<script>alert('XSS')</script>", password: "password123", fullName: "Test User", email: "test@example.com" });
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty("error", "Invalid input");
+    });
+    
+})
+    
 

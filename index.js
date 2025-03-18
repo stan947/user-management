@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const { body, validationResult } = require("express-validator");
  
 const app = express();
 const PORT = 3000;
@@ -14,7 +15,20 @@ let users = [];
 let loggedInUser = null; // Stores currently logged-in user session
  
 // Register User
-app.post("/register", (req, res) => {
+app.post("/register",
+    [
+        body("username").trim().escape().not().isEmpty().matches(/^[a-zA-Z0-9_-]+$/).withMessage("Invalid username"),
+        body("fullName").trim().escape().not().isEmpty(),
+        body("email").isEmail().normalizeEmail(),
+        body("password").isLength({ min: 6 })
+], 
+(req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: "Invalid input" });
+    }
+        
+
     const { username, password, fullName, email } = req.body;
  
     // Validate input
